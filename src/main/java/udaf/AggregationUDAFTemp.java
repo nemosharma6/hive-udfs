@@ -10,16 +10,16 @@ import org.apache.hadoop.hive.ql.exec.UDAF;
 import org.apache.hadoop.hive.ql.exec.UDAFEvaluator;
 import org.apache.hadoop.hive.ql.metadata.HiveException;
 
-public class AggregationUDAF extends UDAF {
+public class AggregationUDAFTemp extends UDAF {
 
 	public static class ProdUDAFEvaluator implements UDAFEvaluator {
 
 		public static class Result {
 			// List<String> list = new ArrayList<>();
-			Map<String, Double> spendMap = new HashMap<String, Double>();
-			Map<String, List<String>> visitsMap = new HashMap<String, List<String>>();
-			Map<String, Double> unitsMap = new HashMap<String, Double>();
-			Map<String, Double> returnedItemSpendMap = new HashMap<String, Double>();
+			Map<Integer, Double> spendMap = new HashMap<Integer, Double>();
+			Map<Integer, Double> unitsMap = new HashMap<Integer, Double>();
+			Map<Integer, List<String>> visitsMap = new HashMap<Integer, List<String>>();
+			Map<Integer, Double> returnedItemSpendMap = new HashMap<Integer, Double>();
 		}
 
 		private Result result = null;
@@ -33,7 +33,7 @@ public class AggregationUDAF extends UDAF {
 			result = new Result();
 		}
 
-		public boolean iterate(String key, int returnedItemInd, double retail_price, double unit_qty, int storeNbr,
+		public boolean iterate(Integer key, int returnedItemInd, double retail_price, double unit_qty, int storeNbr,
 				long visitNbr) throws HiveException {
 
 			if (result == null)
@@ -81,14 +81,14 @@ public class AggregationUDAF extends UDAF {
 			return true;
 		}
 
-		public Map<String, ArrayList<Double>> terminate() {
-			Map<String, ArrayList<Double>> temp = new HashMap<String, ArrayList<Double>>();
-			for (Entry<String, Double> entry : result.spendMap.entrySet()) {
+		public Map<Integer, ArrayList<Double>> terminate() {
+			Map<Integer, ArrayList<Double>> temp = new HashMap<Integer, ArrayList<Double>>();
+			for (Entry<Integer, Double> entry : result.spendMap.entrySet()) {
 				ArrayList<Double> temp1 = new ArrayList<Double>();
 				
 				temp1.add(entry.getValue());
-				temp1.add((double) result.visitsMap.get(entry.getKey()).size());
 				temp1.add(result.unitsMap.get(entry.getKey()));
+				temp1.add((double) result.visitsMap.get(entry.getKey()).size());
 				if (result.returnedItemSpendMap.containsKey(entry.getKey())) {
 					temp1.add(result.returnedItemSpendMap.get(entry.getKey()));
 				} else {
@@ -97,10 +97,6 @@ public class AggregationUDAF extends UDAF {
 
 				temp.put(entry.getKey(), temp1);
 			}
-			result.spendMap=null;
-			result.visitsMap=null;
-			result.returnedItemSpendMap=null;
-			result.unitsMap=null;
 			return temp;
 		}
 
@@ -109,11 +105,10 @@ public class AggregationUDAF extends UDAF {
 		}
 
 		public boolean merge(Result another) {
-			if (another == null || another.returnedItemSpendMap == null || another.spendMap == null || another.unitsMap == null ||
-					another.visitsMap == null)
+			if (another == null)
 				return true;
 
-			for (Entry<String, Double> entry : another.spendMap.entrySet()) {
+			for (Entry<Integer, Double> entry : another.spendMap.entrySet()) {
 				if (!result.spendMap.containsKey(entry.getKey())) {
 					result.spendMap.put(entry.getKey(), entry.getValue());
 				} else {
@@ -122,7 +117,7 @@ public class AggregationUDAF extends UDAF {
 				}
 			}
 
-			for (Entry<String, Double> entry : another.unitsMap.entrySet()) {
+			for (Entry<Integer, Double> entry : another.unitsMap.entrySet()) {
 				if (!result.unitsMap.containsKey(entry.getKey())) {
 					result.unitsMap.put(entry.getKey(), entry.getValue());
 				} else {
@@ -131,7 +126,7 @@ public class AggregationUDAF extends UDAF {
 				}
 			}
 
-			for (Entry<String, List<String>> entry : another.visitsMap.entrySet()) {
+			for (Entry<Integer, List<String>> entry : another.visitsMap.entrySet()) {
 				if (!result.visitsMap.containsKey(entry.getKey())) {
 					result.visitsMap.put(entry.getKey(), entry.getValue());
 				} else {
@@ -145,7 +140,7 @@ public class AggregationUDAF extends UDAF {
 				}
 			}
 
-			for (Entry<String, Double> entry : another.returnedItemSpendMap.entrySet()) {
+			for (Entry<Integer, Double> entry : another.returnedItemSpendMap.entrySet()) {
 				if (!result.returnedItemSpendMap.containsKey(entry.getKey())) {
 					result.returnedItemSpendMap.put(entry.getKey(), entry.getValue());
 				} else {
@@ -154,10 +149,6 @@ public class AggregationUDAF extends UDAF {
 				}
 			}
 
-			another.returnedItemSpendMap=null;
-			another.spendMap=null;
-			another.unitsMap=null;
-			another.visitsMap=null;
 			return true;
 		}
 	}
