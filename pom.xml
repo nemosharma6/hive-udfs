@@ -6,7 +6,7 @@
 	<version>0.0.1-SNAPSHOT</version>
 
 	<properties>
-		<hive.version>2.1.1</hive.version>
+		<hive.version>2.3.4</hive.version>
 	</properties>
 
 	<dependencies>
